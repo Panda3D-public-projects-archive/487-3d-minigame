@@ -28,10 +28,10 @@ import random
 
 ######CONSTANTS######
 #CHOICE OF MODELS
-RALPH = 1
-SONIC = 2
-TAILS = 3
-EVE = 4
+RALPH = 0
+SONIC = 1
+TAILS = 2
+EVE = 3
 #################
 SONIC_SCALE = .25
 STARTING_POS = Vec3(0,0,0)
