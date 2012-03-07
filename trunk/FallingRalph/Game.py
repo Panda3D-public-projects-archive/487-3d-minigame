@@ -50,6 +50,11 @@ LIST_OF_POSITIONS = [Vec3(-15,-5,0), Vec3(-7,-5,0), Vec3(7,-5,0), Vec3(15,-5,0)]
 LIST_OF_NAMES = ["Ralph","Sonic","Tails", "Eve"]
 LIST_OF_TEXT_POS = [Vec3(-1.1,0,-0.5), Vec3(-0.55,0,-0.5), Vec3(0.55,0,-0.5), Vec3(1.1,0,-0.5)]
 
+#Used in Avatar Movement
+X_STRAFE = 0.5
+Y_STRAFE = 0.5
+
+
 
 class World(DirectObject):
 	'''
@@ -71,7 +76,8 @@ class World(DirectObject):
 		# turn off default mouse motion and position camera
 		# remember! if the mouse control is on, you can't reposition the camera
 		base.disableMouse()
-		base.camera.setPosHpr(Vec3(0,0,50), Vec3(0, -90, 0))
+		self.cameraPos = Vec3(0,0,50) #I'm using this to keep track of the camera's position since it won't get me its position
+		base.camera.setPosHpr(self.cameraPos, Vec3(0, -90, 0))
 		
 		
 		#Initialize Picker
@@ -92,12 +98,17 @@ class World(DirectObject):
 		
 		#A dictionary of what keys are currently being pressed
 		#The key events update this list, and our task will query it as input
-		self.keys = {"moveLeft" : 0, "moveRight" : 0, "levelStart": 0}
+		self.keys = {"moveLeft" : 0, "moveRight" : 0, "moveUp" : 0, "moveDown":0, "levelStart": 0}
 		
+		#Arrow Keys, used in movement
 		self.accept("arrow_left", self.keys.update, [{"moveLeft":1}] )
 		self.accept("arrow_left-up", self.keys.update, [{"moveLeft":0}] )
 		self.accept("arrow_right", self.keys.update, [{"moveRight":1}] )
 		self.accept("arrow_right-up", self.keys.update, [{"moveRight":0}] )
+		self.accept("arrow_up", self.keys.update, [{"moveUp":1}] )
+		self.accept("arrow_up-up", self.keys.update, [{"moveUp":0}] )
+		self.accept("arrow_down", self.keys.update, [{"moveDown":1}] )
+		self.accept("arrow_down-up", self.keys.update, [{"moveDown":0}] )
 		self.accept("h", self.displayHelp)
 		self.accept("space", self.keys.update, [{"levelStart":1}] )
 		
@@ -116,12 +127,16 @@ class World(DirectObject):
 		self.music.setLoop(True)
 		self.music.play()
 		'''
-		
+	'''
+	### Name: selectScreen 
+	### Author: Patrick Delaney
+	### Parameters: None
+	### Description: Loads the select screen.
+	'''
 	def selectScreen(self):
 		text = "Select a Character! Click on any of the four below!"
 		self.titleText = self.loadText("fonts/vector.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
-		#test = self.loadText("fonts/vector.egg","Title", "Test",TextNode.ACenter,VBase4(0,0,1,1),Vec3(0.55,0,-0.5),0.1)
 		
 		#Load the avatars on the screen for initial selection
 		#Load the text below the avatars as well
@@ -129,9 +144,16 @@ class World(DirectObject):
 			self.avatars.append(self.loadAvatar(LIST_OF_AVATARS[i],LIST_OF_SCALES[i],LIST_OF_POSITIONS[i]))
 			self.names.append(self.loadText("fonts/vector.egg",LIST_OF_NAMES[i], LIST_OF_NAMES[i],
 							  TextNode.ACenter,VBase4(0,0,1,1),LIST_OF_TEXT_POS[i],0.1) )
-	
+	'''
+	### Name: avatarSelect
+	### Author: Patrick Delaney
+	### Parameters: task
+	### Description: This method is a task that handles the character selection. Once the player has selected a character, it
+	###				 removes itself from the task queue and adds the gameLoop task to the queue as well as loads the initial 
+	###				 gamestate.
+	'''
 	def avatarSelect(self,task):
-		if(self.curAvatar < 0):
+		if(self.curAvatar < 0): # If the player has not selected a character
 			return task.cont
 		else:
 			self.cleanUpAvatars()
@@ -180,6 +202,12 @@ class World(DirectObject):
 		textPath.setPos(pos)
 		textPath.setScale(scale)
 		return textPath
+	'''
+	### Name: cleanUpAvatars 
+	### Author: Patrick Delaney
+	### Parameters: None
+	### Description: Deletes everything from the character selection screen.
+	'''
 	def cleanUpAvatars(self):
 		self.titleText.removeNode()
 		for i in range(len(LIST_OF_AVATARS)):
@@ -205,15 +233,30 @@ class World(DirectObject):
 		#Getting the change in time since the last task.
 		dt = task.time - task.last
 		task.last = task.time
-		base.camera.lookAt(self.player.avatar)
+		#base.camera.lookAt(self.player.avatar)
 		#Will also need to update the camera's position
 		self.updatePlayer(dt)
+		#Updating the camera with the player is off until we have something in the background to compare it with.
+		#self.updateCamera()
 		
 
 		return task.cont #Makes game loop infinite
 	def updatePlayer(self,dt):
-		newPos = self.player.getPos() + (self.player.getVelocity())
-		self.player.setPos(newPos)
+		curPos = self.player.avatar.getPos()
+		if(self.keys["moveLeft"]):
+			curPos[0] -= X_STRAFE
+		elif(self.keys["moveRight"]):
+			curPos[0] += X_STRAFE
+		elif(self.keys["moveUp"]):
+			curPos[1] += Y_STRAFE
+		elif(self.keys["moveDown"]):
+			curPos[1] -= Y_STRAFE
+		newPos = curPos  + self.player.getVelocity()*dt*10
+		self.player.avatar.setPos(newPos)
+	def updateCamera(self):
+		#We will need to discuss boundaries
+		#avatarPos = self.player.avatar.getPos()
+		base.camera.setPos(self.player.avatar.getPos() + Vec3(0,0,50))
 	def collisionDetection(self):
 		return;
 	
