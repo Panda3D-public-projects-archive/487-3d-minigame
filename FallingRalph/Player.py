@@ -32,7 +32,7 @@ RALPH = 0
 SONIC = 1
 TAILS = 2
 EVE = 3
-STARTING_VELOCITY = Vec3(0,-4.9,0)
+STARTING_VELOCITY = Vec3(0,0,-4.9)
 #################
 SONIC_SCALE = .25
 STARTING_POS = Vec3(0,0,0)
@@ -48,7 +48,7 @@ class Player:
 	### Description: Constructs the Player Object
 	'''
 	def __init__(self,choice):
-		self.avatarNode = render.attachNewNode("player_dummy_node")
+		#self.avatarNode = render.attachNewNode("player_dummy_node")
 		if(choice == RALPH):
 			self.avatar = loader.loadModel("models/ralph")
 		elif(choice == SONIC):
@@ -59,14 +59,10 @@ class Player:
 			self.avatar.setScale(SONIC_SCALE)
 		elif(choice == EVE):
 			self.avatar = loader.loadModel("models/eve")
-		self.avatar.reparentTo(self.avatarNode)
+		self.avatar.reparentTo(render)
 		self.avatar.setPos(STARTING_POS)
-		self.avatar.setP(-90)
+		self.avatar.setHpr(180,90,0)
 		self.velocity = STARTING_VELOCITY
-	def getPos(self):
-		return self.avatar.getPos()
-	def setPos(self,val):
-		self.avatar.setPos(val)
 	def getVelocity(self):
 		return self.velocity
 	def setVelocity(self,val):
