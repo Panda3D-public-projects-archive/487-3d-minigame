@@ -32,6 +32,7 @@ RALPH = 0
 SONIC = 1
 TAILS = 2
 EVE = 3
+STARTING_VELOCITY = Vec3(0,-4.9,0)
 #################
 SONIC_SCALE = .25
 STARTING_POS = Vec3(0,0,0)
@@ -61,4 +62,14 @@ class Player:
 		self.avatar.reparentTo(self.avatarNode)
 		self.avatar.setPos(STARTING_POS)
 		self.avatar.setP(-90)
+		self.velocity = STARTING_VELOCITY
+	def getPos(self):
+		return self.avatar.getPos()
+	def setPos(self,val):
+		self.avatar.setPos(val)
+	def getVelocity(self):
+		return self.velocity
+	def setVelocity(self,val):
+		self.velocity = val
+	
 		
