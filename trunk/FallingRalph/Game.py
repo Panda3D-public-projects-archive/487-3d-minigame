@@ -92,8 +92,10 @@ class World(DirectObject):
 		self.names = []
 		self.selectScreen()
 		
-		#Object List
+		#Object Storage
 		self.objects = []
+		#Storage for rings
+		self.rings = []
 		
 		#State Variables
 		self.notSelected = True
@@ -189,7 +191,15 @@ class World(DirectObject):
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
 		ring = Objects(RING,Vec3(0,0,-10), RING_SCORE)
-		self.objects.append(ring)
+		self.rings.append(ring)
+		ring = Objects(RING,Vec3(10,0,-10), RING_SCORE)
+		self.rings.append(ring)
+		ring = Objects(RING,Vec3(5,0,-10), RING_SCORE)
+		self.rings.append(ring)
+		ring = Objects(RING,Vec3(-5,0,-10), RING_SCORE)
+		self.rings.append(ring)
+		ring = Objects(RING,Vec3(-10,0,-10), RING_SCORE)
+		self.rings.append(ring)
 		
 	'''
 	### Name: loadText
@@ -248,6 +258,9 @@ class World(DirectObject):
 		#Updating the camera with the player is off until we have something in the background to compare it with.
 		#self.updateCamera()
 		
+		#Get the rings to rotate
+		self.updateRings(dt)
+		
 
 		return task.cont #Makes game loop infinite
 	def updatePlayer(self,dt):
@@ -266,6 +279,11 @@ class World(DirectObject):
 		#We will need to discuss boundaries
 		#avatarPos = self.player.avatar.getPos()
 		base.camera.setPos(self.player.avatar.getPos() + Vec3(0,0,50))
+	def updateRings(self,dt):
+		if(len(self.rings) is not 0):
+			for ring in self.rings:
+				rotate = HprInterval(ring.object,ring.object.getHpr() +Vec3(0,0,1),dt)
+				rotate.start()
 	def collisionDetection(self):
 		return;
 	

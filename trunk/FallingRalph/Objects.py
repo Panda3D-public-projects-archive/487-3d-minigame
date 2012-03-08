@@ -26,7 +26,7 @@ import cPickle, sys
 
 #Identifiers for objects
 TORUS = 1 #Loop
-RING  = 2 # Used as a different score modifer./ Possible win condition. Just an idea. - Patrick
+RING  = 2 # Used as a different score modifer / Possible win condition. Just an idea. - Patrick
 #Ideas for TORUS
 #Speed up loop - Makes you move faster
 #Slow down loop - Makes you move slower
