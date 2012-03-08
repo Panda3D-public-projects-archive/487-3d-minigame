@@ -62,7 +62,9 @@ class Player:
 		self.avatar.reparentTo(render)
 		self.avatar.setPos(STARTING_POS)
 		self.avatar.setHpr(180,90,0)
+		self.avatar.setTransparency(False)
 		self.velocity = STARTING_VELOCITY
+		self.avatarChoice = choice
 	def getVelocity(self):
 		return self.velocity
 	def setVelocity(self,val):

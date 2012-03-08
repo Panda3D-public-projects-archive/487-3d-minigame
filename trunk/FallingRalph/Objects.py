@@ -43,22 +43,22 @@ class Objects:
 	### Name: __init__ (Overridden Constructor)
 	### Author: Patrick Delaney
 	### Parameters: type - integer identifer signifying what type of object. See Constants above.
-	###				pos - position
+	###				pos - position, num- Used in naming the object's collision node. E.g Ring1
 	### Description: 
 	'''
-	def __init__(self,type,pos,val):
+	def __init__(self,type,pos):
 		if(type == TORUS):
 			self.object = loader.loadModel("models/torus")
 			self.object.setScale(2)
-			#self.object.setColor(0,0,1,1)
+			#self.object.setColor(0,0,1,1)	
 		elif(type == RING):
 			self.object = loader.loadModel("models/torus")
 			self.object.setScale(0.5)
 			self.object.setColor(255,215,0,1)   # Gold
+			self.object.setTransparency(True)	
 		else:
 			self.object = loader.loadModel("models/torus")
 		self.object.setPos(pos)
-		self.score = val
 		self.object.reparentTo(render)
 			
 	

@@ -42,6 +42,17 @@ from Objects import *
 	
 '''
 
+def collGeom(obj, name, fromMask, intoMask, geomList):
+	cNode = CollisionNode(name)
+	cNode.setFromCollideMask(BitMask32(fromMask))
+	cNode.setIntoCollideMask(BitMask32(intoMask))
+	
+	for g in geomList:
+		cNode.addSolid(g)
+	
+	cNodePath = obj.attachNewNode(cNode)
+	cNodePath.show()
+	return cNodePath
 
 ######CONSTANTS######
 #These are used in loading the avatars for the character selection screen.
@@ -171,7 +182,8 @@ class World(DirectObject):
 			self.gameTask.last = 0
 			#Load objects 
 			self.loadObjects()
-			
+			#Setup Collisions
+			self.setupCollisions()
 			
 			return task.done
 	'''
@@ -190,16 +202,18 @@ class World(DirectObject):
 		return avatar
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
-		ring = Objects(RING,Vec3(0,0,-10), RING_SCORE)
-		self.rings.append(ring)
-		ring = Objects(RING,Vec3(10,0,-10), RING_SCORE)
-		self.rings.append(ring)
-		ring = Objects(RING,Vec3(5,0,-10), RING_SCORE)
-		self.rings.append(ring)
-		ring = Objects(RING,Vec3(-5,0,-10), RING_SCORE)
-		self.rings.append(ring)
-		ring = Objects(RING,Vec3(-10,0,-50), RING_SCORE)
-		self.rings.append(ring)
+		ring = Objects(RING,Vec3(0,0,-10))
+		self.rings.append(ring.object)
+		ring = Objects(RING,Vec3(10,0,-10))
+		self.rings.append(ring.object)
+		ring = Objects(RING,Vec3(5,0,-10))
+		self.rings.append(ring.object)
+		ring = Objects(RING,Vec3(-5,0,-10))
+		self.rings.append(ring.object)
+		ring = Objects(RING,Vec3(-10,0,-50))
+		self.rings.append(ring.object)
+		ring = Objects(RING,Vec3(-10,0,-200))
+		self.rings.append(ring.object)
 		
 	'''
 	### Name: loadText
@@ -252,7 +266,6 @@ class World(DirectObject):
 		#Getting the change in time since the last task.
 		dt = task.time - task.last
 		task.last = task.time
-		#base.camera.lookAt(self.player.avatar)
 		#Will also need to update the camera's position
 		self.updatePlayer(dt)
 		#Updating the camera with the player is off until we have something in the background to compare it with.
@@ -282,14 +295,50 @@ class World(DirectObject):
 	def updateRings(self,dt):
 		if(len(self.rings) is not 0):
 			for ring in self.rings:
-				rotate = HprInterval(ring.object,ring.object.getHpr() +Vec3(0,0,1),dt)
+				rotate = HprInterval(ring,ring.getHpr() +Vec3(0,0,1),dt)
 				rotate.start()
-	def collisionDetection(self):
-		return;
+	def setupCollisions(self):
+		# use an event collision handler (sends events on collisions)
+		self.cHandler = CollisionHandlerEvent()
+		# set the pattern for the event sent on collision
+		# "enter" plus the name of the object collided into
+		self.cHandler.addInPattern("collected-%in")
+		
+		# make a traverser and make it the default traverser
+		self.cTrav = CollisionTraverser()
+		base.cTrav = self.cTrav
+		
+		bounds = self.player.avatar.getBounds()
+		center = bounds.getCenter()
+		radius = bounds.getRadius()
+		#TODO:Need to create a specfic collision solid for each avatar
+		if(self.player.avatarChoice == SONIC):
+			avatarNode = collGeom(self.player.avatar, 'Sonic', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0,0,10)),radius*1.2),
+										CollisionSphere(Point3(center + Point3(0,0,20)),radius*1.2)])
+										
+		self.cTrav.addCollider(avatarNode,self.cHandler)
+		#Set up collisions for rings
+		for ring in self.rings:
+			collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
+		#collGeom(self.rings[0].object,"Ring0", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
+		#Set up collisions for objects (We may need to organize all objects by their type. Since creating the collision spheres
+		#May be a pain.
+		
+		self.accept("collected-ring",self.collectRing)
 	
 	def displayHelp(self):
 		#Needs to Pause Game
 		return;
+	def collectRing(self,cEntry):
+		print cEntry.getIntoNodePath().getName()
+		print cEntry.getFromNodePath().getName()
+		print "You collected a ring!"
+		for ring in self.rings:
+			print ring
+		print cEntry.getIntoNodePath().getParent()
+		self.rings.remove(cEntry.getIntoNodePath().getParent())
+		cEntry.getIntoNodePath().getParent().remove()
 		
 	
 	
