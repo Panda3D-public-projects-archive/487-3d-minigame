@@ -27,6 +27,7 @@ import math
 import copy
 from Player import *
 from Picker import Picker
+from Objects import *
 #import os
 #from Utilities import *
 
@@ -42,7 +43,7 @@ from Picker import Picker
 '''
 
 
-#Constants
+######CONSTANTS######
 #These are used in loading the avatars for the character selection screen.
 LIST_OF_AVATARS = [ "models/ralph", "models/sonic","models/tails","models/eve"]
 LIST_OF_SCALES = [ 1, .25,.25,1]
@@ -54,6 +55,9 @@ LIST_OF_TEXT_POS = [Vec3(-1.1,0,-0.5), Vec3(-0.55,0,-0.5), Vec3(0.55,0,-0.5), Ve
 X_STRAFE = 0.5
 Y_STRAFE = 0.5
 
+#Points
+LOOP_SCORE = 100
+RING_SCORE = 0
 
 
 class World(DirectObject):
@@ -88,8 +92,8 @@ class World(DirectObject):
 		self.names = []
 		self.selectScreen()
 		
-		
-		
+		#Object List
+		self.objects = []
 		
 		#State Variables
 		self.notSelected = True
@@ -164,7 +168,7 @@ class World(DirectObject):
 			self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 			self.gameTask.last = 0
 			#Load objects 
-			#Start avatars descent
+			self.loadObjects()
 			
 			
 			return task.done
@@ -182,6 +186,11 @@ class World(DirectObject):
 		avatar.setPos(pos)
 		avatar.setP(-90)
 		return avatar
+	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
+	def loadObjects(self):
+		ring = Objects(RING,Vec3(0,0,-10), RING_SCORE)
+		self.objects.append(ring)
+		
 	'''
 	### Name: loadText
 	### Author: Patrick Delaney
@@ -261,6 +270,7 @@ class World(DirectObject):
 		return;
 	
 	def displayHelp(self):
+		#Needs to Pause Game
 		return;
 		
 	

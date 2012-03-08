@@ -1,6 +1,6 @@
 '''###########################################################################################################################
 ### File: Player.py
-### Name: Patrick Delaney
+### Name: Patrick Delaney, Tom WIlliams, John Mannix
 ### Class: CSE 487
 ### Instructor: Dr.Zmuda
 ### Assignment: Assignment 3
