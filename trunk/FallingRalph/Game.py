@@ -37,9 +37,16 @@ from Objects import *
 #      egg-mkfont -o fontName.egg fontName.ttf
 
 '''
-###TODO LIST:
-### Come up with a better name - Patrick
-	
+###TODO LIST/ IDEAS:
+### Come up with a better name
+### Create a Splash Screen
+### Create the Level Select Screen
+### Create the Help Screen
+### Create Custom Level Loaders and 10-20 Levels
+### Add more objects
+### Implement an end to a level
+### Add a results screen  (Return back to level select screen afterwards?)	
+### Add a button that causes the players avatar to speed up / slow down
 '''
 
 def collGeom(obj, name, fromMask, intoMask, geomList):
@@ -51,7 +58,7 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 		cNode.addSolid(g)
 	
 	cNodePath = obj.attachNewNode(cNode)
-	#cNodePath.show()
+	cNodePath.show()
 	return cNodePath
 
 ######CONSTANTS######
@@ -260,7 +267,7 @@ class World(DirectObject):
 	### Name: pick
 	### Author: Dr.Zmuda - Modified by Patrick Delaney
 	### Parameters: Nothing
-	### Description: A modified picker method created by Dr.Zmuda, instead of deleting the select item, it sets the curAvatar
+	### Description: A modified picker method created by Dr.Zmuda, instead of deleting the selected item, it sets the curAvatar
 	###				 state variable to the avatars number. This makes that avatar, the players avatar for the game.
 	'''
 	def pick(self):
@@ -302,6 +309,12 @@ class World(DirectObject):
 		#We will need to discuss boundaries
 		#avatarPos = self.player.avatar.getPos()
 		base.camera.setPos(self.player.avatar.getPos() + Vec3(0,0,50))
+	'''
+	### Name: updateRings
+	### Author: Patrick Delaney
+	### Parameters:  dt - change in time since the last frame
+	### Description: Causes the rings to rotate.
+	'''
 	def updateRings(self,dt):
 		if(len(self.rings) is not 0):
 			for ring in self.rings:
@@ -322,16 +335,34 @@ class World(DirectObject):
 		center = bounds.getCenter()
 		radius = bounds.getRadius()
 		#TODO:Need to create a specfic collision solid for each avatar
-		if(self.player.avatarChoice == SONIC):
-			avatarNode = collGeom(self.player.avatar, 'Sonic', 0x01, 0x00, 
-										[CollisionSphere(Point3(center + Point3(0,0,10)),radius*1.2),
-										CollisionSphere(Point3(center + Point3(0,0,20)),radius*1.2)])
+		#Creating Specific Collision Solids for each character
+		if(self.player.avatarChoice == RALPH):
+			avatarNode = collGeom(self.player.avatar, 'ralph', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0.3,0,4.5)),radius*0.3),
+										CollisionSphere(Point3(center + Point3(0.3,0,2.5)),radius*0.3),
+										CollisionSphere(Point3(center + Point3(0.3,0,1.0)),radius*0.3)])
+		elif(self.player.avatarChoice == SONIC):
+			avatarNode = collGeom(self.player.avatar, 'sonic', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0.2,0,25)),radius*1.1),
+										CollisionSphere(Point3(center + Point3(0,0,15)),radius*1.1),
+										CollisionSphere(Point3(center + Point3(-1,0,7)),radius)])
+		elif(self.player.avatarChoice == TAILS):
+			avatarNode = collGeom(self.player.avatar, 'tails', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0,0,20)),radius*1.2),
+										CollisionSphere(Point3(center + Point3(0,0,10)),radius*1.2),
+										CollisionSphere(Point3(center + Point3(0,0,2)),radius)])
+		
+		elif(self.player.avatarChoice == EVE):
+			avatarNode = collGeom(self.player.avatar, 'eve', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0,0,3.5)),radius*0.35),
+										CollisionSphere(Point3(center + Point3(0,0,1.75)),radius*0.35),
+										CollisionSphere(Point3(center + Point3(0,0,0.35)),radius*0.3)])
+										
 										
 		self.cTrav.addCollider(avatarNode,self.cHandler)
 		#Set up collisions for rings
 		for ring in self.rings:
 			collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
-		#collGeom(self.rings[0].object,"Ring0", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
 		#Set up collisions for objects (We may need to organize all objects by their type. Since creating the collision spheres
 		#May be a pain.
 		
