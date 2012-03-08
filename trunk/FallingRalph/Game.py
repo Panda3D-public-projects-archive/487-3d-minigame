@@ -51,7 +51,7 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 		cNode.addSolid(g)
 	
 	cNodePath = obj.attachNewNode(cNode)
-	cNodePath.show()
+	#cNodePath.show()
 	return cNodePath
 
 ######CONSTANTS######
@@ -111,6 +111,8 @@ class World(DirectObject):
 		#State Variables
 		self.notSelected = True
 		self.curAvatar = -1 #Used to determine which avatar to load
+		self.score = 0 #Used to keep track of the player's score.
+		self.numRings = 0 #Used to keep track of how many Rings Collected
 		
 		
 		#A dictionary of what keys are currently being pressed
@@ -152,14 +154,14 @@ class World(DirectObject):
 	'''
 	def selectScreen(self):
 		text = "Select a Character! Click on any of the four below!"
-		self.titleText = self.loadText("fonts/vector.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
+		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
 		
 		#Load the avatars on the screen for initial selection
 		#Load the text below the avatars as well
 		for i in range(len(LIST_OF_AVATARS)):
 			self.avatars.append(self.loadAvatar(LIST_OF_AVATARS[i],LIST_OF_SCALES[i],LIST_OF_POSITIONS[i]))
-			self.names.append(self.loadText("fonts/vector.egg",LIST_OF_NAMES[i], LIST_OF_NAMES[i],
+			self.names.append(self.loadText("fonts/centbold.egg",LIST_OF_NAMES[i], LIST_OF_NAMES[i],
 							  TextNode.ACenter,VBase4(0,0,1,1),LIST_OF_TEXT_POS[i],0.1) )
 	'''
 	### Name: avatarSelect
@@ -178,12 +180,7 @@ class World(DirectObject):
 			self.ignore("mouse1") #We don't need picking anymore
 			#Now that the player has picked an avatar
 			#Prepare initial game state and add gameLoop to the task list.
-			self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
-			self.gameTask.last = 0
-			#Load objects 
-			self.loadObjects()
-			#Setup Collisions
-			self.setupCollisions()
+			self.loadInitialGameState()
 			
 			return task.done
 	'''
@@ -202,19 +199,32 @@ class World(DirectObject):
 		return avatar
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
-		ring = Objects(RING,Vec3(0,0,-10))
+		ring = Objects(RING,Vec3(0,0,-400))
 		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(10,0,-10))
+		ring = Objects(RING,Vec3(10,0,-300))
 		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(5,0,-10))
+		ring = Objects(RING,Vec3(5,0,-30))
 		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(-5,0,-10))
+		ring = Objects(RING,Vec3(-5,0,-100))
 		self.rings.append(ring.object)
 		ring = Objects(RING,Vec3(-10,0,-50))
 		self.rings.append(ring.object)
 		ring = Objects(RING,Vec3(-10,0,-200))
 		self.rings.append(ring.object)
+	def loadInitialGameState(self):
+		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
+		self.gameTask.last = 0
+		#Load objects 
+		self.loadObjects()
+		#Setup Collisions
+		self.setupCollisions()
 		
+		#Load score Font
+		self.scoreText = self.loadText("fonts/centbold.egg","Score", "Score: " + `self.score`,TextNode.ACenter,
+										VBase4(1,1,0,1),Vec3(-1.1,0,0.90),0.1)
+		#Load Rings Font
+		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,TextNode.ACenter,
+										VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
 	'''
 	### Name: loadText
 	### Author: Patrick Delaney
@@ -331,14 +341,14 @@ class World(DirectObject):
 		#Needs to Pause Game
 		return;
 	def collectRing(self,cEntry):
-		print cEntry.getIntoNodePath().getName()
-		print cEntry.getFromNodePath().getName()
 		print "You collected a ring!"
-		for ring in self.rings:
-			print ring
-		print cEntry.getIntoNodePath().getParent()
 		self.rings.remove(cEntry.getIntoNodePath().getParent())
 		cEntry.getIntoNodePath().getParent().remove()
+		self.numRings += 1
+		#Update the Ring Text
+		self.ringText.removeNode()
+		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,
+										TextNode.ACenter,VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
 		
 	
 	
