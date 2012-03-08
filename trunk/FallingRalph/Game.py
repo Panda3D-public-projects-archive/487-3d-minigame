@@ -198,7 +198,7 @@ class World(DirectObject):
 		self.rings.append(ring)
 		ring = Objects(RING,Vec3(-5,0,-10), RING_SCORE)
 		self.rings.append(ring)
-		ring = Objects(RING,Vec3(-10,0,-10), RING_SCORE)
+		ring = Objects(RING,Vec3(-10,0,-50), RING_SCORE)
 		self.rings.append(ring)
 		
 	'''
@@ -256,7 +256,7 @@ class World(DirectObject):
 		#Will also need to update the camera's position
 		self.updatePlayer(dt)
 		#Updating the camera with the player is off until we have something in the background to compare it with.
-		#self.updateCamera()
+		self.updateCamera()
 		
 		#Get the rings to rotate
 		self.updateRings(dt)
