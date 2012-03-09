@@ -5,7 +5,7 @@
 ### Instructor: Dr.Zmuda
 ### Assignment: Assignment 3
 ### Files included: Utilities.py, brickout.py
-### Description: This class contains all of my methods that were global in nature in brickout.py
+### Description: This class makes all of the objects for our game. (An Object Factory)
 ################ 
 '''
 ### Name: 

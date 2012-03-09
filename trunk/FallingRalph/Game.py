@@ -58,7 +58,7 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 		cNode.addSolid(g)
 	
 	cNodePath = obj.attachNewNode(cNode)
-	cNodePath.show()
+	#cNodePath.show()
 	return cNodePath
 
 ######CONSTANTS######
@@ -120,6 +120,7 @@ class World(DirectObject):
 		self.curAvatar = -1 #Used to determine which avatar to load
 		self.score = 0 #Used to keep track of the player's score.
 		self.numRings = 0 #Used to keep track of how many Rings Collected
+		self.alreadyDisplayed = False
 		
 		
 		#A dictionary of what keys are currently being pressed
@@ -136,7 +137,6 @@ class World(DirectObject):
 		self.accept("arrow_down", self.keys.update, [{"moveDown":1}] )
 		self.accept("arrow_down-up", self.keys.update, [{"moveDown":0}] )
 		self.accept("h", self.displayHelp)
-		self.accept("space", self.keys.update, [{"levelStart":1}] )
 		
 		#Picking, Used in character selection.
 		self.accept("mouse1", self.pick)
@@ -221,6 +221,11 @@ class World(DirectObject):
 	def loadInitialGameState(self):
 		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 		self.gameTask.last = 0
+		#Load environment (I may make a class or method or something for this later - Patrick)
+		self.env = loader.loadModel("models/env")
+		self.env.reparentTo(render)
+		self.env.setScale(1000)
+		self.env.setPos(0,0,-1000)
 		#Load objects 
 		self.loadObjects()
 		#Setup Collisions
@@ -232,6 +237,8 @@ class World(DirectObject):
 		#Load Rings Font
 		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,TextNode.ACenter,
 										VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
+		#Allow Spacebar to be pressed to start the level
+		self.accept("space", self.keys.update, [{"levelStart":1}] )
 	'''
 	### Name: loadText
 	### Author: Patrick Delaney
@@ -283,14 +290,21 @@ class World(DirectObject):
 		#Getting the change in time since the last task.
 		dt = task.time - task.last
 		task.last = task.time
-		#Will also need to update the camera's position
-		self.updatePlayer(dt)
-		#Updating the camera with the player is off until we have something in the background to compare it with.
-		self.updateCamera()
+		if(self.keys["levelStart"]):
+			#Remove the Instruction Text from the screen
+			self.startText.removeNode()
+			#Will also need to update the camera's position
+			self.updatePlayer(dt)
+			#Updating the camera with the player is off until we have something in the background to compare it with.
+			self.updateCamera()
 		
-		#Get the rings to rotate
-		self.updateRings(dt)
-		
+			#Get the rings to rotate
+			self.updateRings(dt)
+		else:
+			if(not self.alreadyDisplayed):
+				self.startText = self.loadText("fonts/centbold.egg","Start", "Press 'Spacebar' to start",TextNode.ACenter,
+										VBase4(0,0,0,1),Vec3(0,0,0),0.1)
+				self.alreadyDisplayed = True
 
 		return task.cont #Makes game loop infinite
 	def updatePlayer(self,dt):
