@@ -28,6 +28,7 @@ import copy
 from Player import *
 from Picker import Picker
 from Objects import *
+from LevelGenerator import *
 #import os
 #from Utilities import *
 
@@ -159,6 +160,9 @@ class World(DirectObject):
 	### Parameters: None
 	### Description: Loads the select screen.
 	'''
+	
+		
+	
 	def selectScreen(self):
 		text = "Select a Character! Click on any of the four below!"
 		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
@@ -206,18 +210,7 @@ class World(DirectObject):
 		return avatar
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
-		ring = Objects(RING,Vec3(0,0,-400))
-		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(10,0,-300))
-		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(5,0,-30))
-		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(-5,0,-100))
-		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(-10,0,-50))
-		self.rings.append(ring.object)
-		ring = Objects(RING,Vec3(-10,0,-200))
-		self.rings.append(ring.object)
+		level = LevelGenerator( self.rings , 5);
 	def loadInitialGameState(self):
 		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 		self.gameTask.last = 0
@@ -308,17 +301,19 @@ class World(DirectObject):
 
 		return task.cont #Makes game loop infinite
 	def updatePlayer(self,dt):
+		
 		curPos = self.player.avatar.getPos()
 		if(self.keys["moveLeft"]):
 			curPos[0] -= X_STRAFE
-		elif(self.keys["moveRight"]):
+		if(self.keys["moveRight"]):
 			curPos[0] += X_STRAFE
-		elif(self.keys["moveUp"]):
+		if(self.keys["moveUp"]):
 			curPos[1] += Y_STRAFE
-		elif(self.keys["moveDown"]):
+		if(self.keys["moveDown"]):
 			curPos[1] -= Y_STRAFE
 		newPos = curPos  + self.player.getVelocity()*dt*10
 		self.player.avatar.setPos(newPos)
+	
 	def updateCamera(self):
 		#We will need to discuss boundaries
 		#avatarPos = self.player.avatar.getPos()
