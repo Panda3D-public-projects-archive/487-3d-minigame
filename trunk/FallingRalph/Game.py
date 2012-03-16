@@ -266,7 +266,7 @@ class World(DirectObject):
 		return avatar
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
-		level = LevelGenerator( self.rings , 5);
+		level = LevelGenerator( self.rings , self.difficulty);
 	def loadInitialGameState(self):
 		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 		self.gameTask.last = 0
@@ -407,7 +407,7 @@ class World(DirectObject):
 										CollisionSphere(Point3(center + Point3(0.3,0,2.5)),radius*0.3),
 										CollisionSphere(Point3(center + Point3(0.3,0,1.0)),radius*0.3)])
 		elif(self.player.avatarChoice == SONIC):
-			avatarNode = collGeom(self.player.avatar, 'sonic', 0x01, 0x01, 
+			avatarNode = collGeom(self.player.avatar, 'sonic', 0x01, 0x00, 
 										[CollisionSphere(Point3(center + Point3(0.2,0,25)),radius*1.1),
 										CollisionSphere(Point3(center + Point3(0,0,15)),radius*1.1),
 										CollisionSphere(Point3(center + Point3(-1,0,7)),radius)])
@@ -432,14 +432,14 @@ class World(DirectObject):
 		
 		#Set up collisions for environment (This currently doesn't work - Patrick)
 		#Creating floor collider
-		avatarCRayNode = collGeom(self.player.avatar, 'Avatar_ray', 0x01, 0x00, [CollisionRay(0,0,0,0,-5,0)])
+		avatarCRayNode = collGeom(self.player.avatar, 'Avatar_ray', 0x08, 0x00, [CollisionRay(0,0,0,0,-5,0)])
 		lifter = CollisionHandlerFloor()
 		lifter.addCollider(avatarCRayNode, self.player.avatar)
 		self.cTrav.addCollider(avatarCRayNode, lifter)
 		
 			
 		
-		collGeom(self.env, 'floor', 0x01, 0xffffffff, [CollisionPlane(Plane(Vec3(0,0,1), Point3(0,0,0)))])
+		collGeom(self.env, 'floor', 0x00,0xFFFFFFFF, [CollisionPlane(Plane(Vec3(0,0,1), Point3(0,0,0)))])
 		#Set up collisions for objects (We may need to organize all objects by their type. Since creating the collision spheres
 		#May be a pain.
 		
