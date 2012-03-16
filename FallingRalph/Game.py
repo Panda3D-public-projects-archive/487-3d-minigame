@@ -78,6 +78,14 @@ Y_STRAFE = 0.5
 LOOP_SCORE = 100
 RING_SCORE = 0
 
+#Used in the level select scene
+LIST_OF_DIFFICULT = ["easy","normal","hard","intense","insane","bunnies"]
+DSCALE = Vec3(4,1,16)
+LIST_OF_DPOS = [Vec3(-10,0,0),Vec3(-6,0,0),Vec3(-2,0,0),Vec3(2,0,0),Vec3(6,0,0),Vec3(10,0,0)]
+
+#Difficulty levels
+SCALE_OF_HARDNESS = [5,10,15,20,25,30]
+
 
 class World(DirectObject):
 	'''
@@ -109,7 +117,10 @@ class World(DirectObject):
 		#Character Selection
 		self.avatars = []
 		self.names = []
-		self.selectScreen()
+    #Level selection
+		self.buttons = []
+		self.curDiff = -1
+		self.selectLevel()
 		
 		#Object Storage
 		self.objects = []
@@ -139,13 +150,13 @@ class World(DirectObject):
 		self.accept("arrow_down-up", self.keys.update, [{"moveDown":0}] )
 		self.accept("h", self.displayHelp)
 		
-		#Picking, Used in character selection.
-		self.accept("mouse1", self.pick)
+		#Picking, Used in character selection and level selection.
+		self.accept("mouse1", self.buttonPick)
 		
 		#Quit game
 		self.accept("escape", sys.exit)
 		
-		self.avatarSelectTask = taskMgr.add(self.avatarSelect, "avatarSelect")
+		self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
 		
 		'''
 		#If we want music just comment out this part and put the file below
@@ -161,7 +172,52 @@ class World(DirectObject):
 	### Description: Loads the select screen.
 	'''
 	
+	def loadButton(self,path,scale,pos):
+		button = loader.loadModel("models/plane")
+		tex = loader.loadTexture("models/button-"+path+".png") #Load the texture
+		button.setTexture(tex, 1)  
+		button.setCollideMask(0x01)
+		button.reparentTo(render)
+		button.setScale(scale)
+		button.setPos(pos)
+		button.setP(-90)
+		return button
+
+	def selectLevel(self):
+		text = "Select your Level!"
+		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
+		for i in range(len(LIST_OF_DIFFICULT)):
+			self.buttons.append(self.loadButton(LIST_OF_DIFFICULT[i], DSCALE, LIST_OF_DPOS[i]))
+
+                
+	def buttonSelect(self,task):
+		if(self.curDiff < 0): # If the player has not selected a level
+			return task.cont
+		else:
+			print "Exiting button task"
+			self.cleanUpButtons()
+			self.accept("mouse1", self.pick) # change picker to handle Avatars now.
+			self.difficulty = SCALE_OF_HARDNESS[self.curDiff]
+			self.selectScreen()
+			self.avatarSelectTask = taskMgr.add(self.avatarSelect, "avatarSelect")
+			
+			return task.done
+
+	def buttonPick(self):
+		cEntry = self.picker.pick()
+		if cEntry:
+			buttonGeomHit = cEntry.getIntoNodePath()
+			for i in range(len(self.buttons)):
+				p = self.buttons[i]
+				if p.isAncestorOf(buttonGeomHit):
+					self.curDiff = i
+					return
+
+	def cleanUpButtons(self):
+		self.titleText.removeNode()
+		for i in range(len(LIST_OF_DIFFICULT)):
+			self.buttons[i].removeNode()
 	
 	def selectScreen(self):
 		text = "Select a Character! Click on any of the four below!"
