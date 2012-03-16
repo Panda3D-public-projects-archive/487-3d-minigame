@@ -42,7 +42,9 @@ class LevelGenerator:
 			
 			currentRing =   [lastRing[0] + ( sign[0]  / math.fabs(sign[0])) * ( random.random() * (1 * self.diff) ) - ( .5 * self.diff ) , 
 			                 lastRing[1] + ( sign[1]  / math.fabs(sign[1])) * ( random.random() * (1 * self.diff) ) - ( .5 * self.diff )];
-			
+			if(random() < diff/200 )
+				anvil = Objects( ANVIL , Vec3(currentRing[0] +sign[0] * 20-diff, currentRing[1] + sign[0] * 20-diff, i * self.SECTIONHEIGHT));
+				
 			totalsign += ( sign[0]  / math.fabs(sign[0]));
 			totalsign2 += ( sign[1]  / math.fabs(sign[1]));
 			
