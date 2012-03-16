@@ -27,6 +27,7 @@ import cPickle, sys
 #Identifiers for objects
 TORUS = 1 #Loop
 RING  = 2 # Used as a different score modifer / Possible win condition. Just an idea. - Patrick
+ANVIL = 3
 #Ideas for TORUS
 #Speed up loop - Makes you move faster
 #Slow down loop - Makes you move slower
@@ -47,6 +48,7 @@ class Objects:
 	### Description: 
 	'''
 	def __init__(self,type,pos):
+		self.type = type;
 		if(type == TORUS):
 			self.object = loader.loadModel("models/torus")
 			self.object.setScale(2)
@@ -56,6 +58,10 @@ class Objects:
 			self.object.setScale(0.5)
 			self.object.setColor(255,215,0,1)   # Gold
 			self.object.setTransparency(True)	
+		elif( type == ANVIL):
+			self.object = loader.loadModel("models/anvil");
+			self.object.setTransparency( True);
+			self.object.setScale(5);
 		else:
 			self.object = loader.loadModel("models/torus")
 		self.object.setPos(pos)

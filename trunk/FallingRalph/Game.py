@@ -71,12 +71,13 @@ LIST_OF_NAMES = ["Ralph","Sonic","Tails", "Eve"]
 LIST_OF_TEXT_POS = [Vec3(-1.1,0,-0.5), Vec3(-0.55,0,-0.5), Vec3(0.55,0,-0.5), Vec3(1.1,0,-0.5)]
 
 #Used in Avatar Movement
-X_STRAFE = 0.5
-Y_STRAFE = 0.5
+X_STRAFE = .5
+Y_STRAFE = .5
 
 #Points
 LOOP_SCORE = 100
 RING_SCORE = 0
+ANVIL_LOSS = 5
 
 #Used in the level select scene
 LIST_OF_DIFFICULT = ["easy","normal","hard","intense","insane","bunnies"]
@@ -84,7 +85,7 @@ DSCALE = Vec3(4,1,16)
 LIST_OF_DPOS = [Vec3(-10,0,0),Vec3(-6,0,0),Vec3(-2,0,0),Vec3(2,0,0),Vec3(6,0,0),Vec3(10,0,0)]
 
 #Difficulty levels
-SCALE_OF_HARDNESS = [5,10,15,20,25,30]
+SCALE_OF_HARDNESS = [5,10,15,20,25,25]
 
 
 class World(DirectObject):
@@ -126,6 +127,9 @@ class World(DirectObject):
 		self.objects = []
 		#Storage for rings
 		self.rings = []
+		self.types = []
+		#Storage for anvils
+		self.anvils = []
 		
 		#State Variables
 		self.notSelected = True
@@ -158,6 +162,8 @@ class World(DirectObject):
 		
 		self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
 		
+		self.ringLoss = base.loader.loadSfx("music/RingLoss.mp3")
+		self.ringGained = base.loader.loadSfx("music/RingGained.mp3")
 		'''
 		#If we want music just comment out this part and put the file below
 		#Play music
@@ -266,7 +272,7 @@ class World(DirectObject):
 		return avatar
 	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
 	def loadObjects(self):
-		level = LevelGenerator( self.rings , self.difficulty);
+		level = LevelGenerator( self.rings , self.difficulty, self.anvils);
 	def loadInitialGameState(self):
 		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 		self.gameTask.last = 0
@@ -274,6 +280,7 @@ class World(DirectObject):
 		self.env = loader.loadModel("models/env")
 		self.env.reparentTo(render)
 		self.env.setScale(1000)
+		self.env.setH(0)
 		self.env.setPos(0,0,-1000)
 		#Load objects 
 		self.loadObjects()
@@ -428,31 +435,56 @@ class World(DirectObject):
 		
 		#Set up collisions for rings
 		for ring in self.rings:
-			collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
-		
+				collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
+			
+		for anvil in self.anvils:
+				collGeom(anvil,"anvil", 0x00,0x01,[CollisionSphere(Point3(0,0,0),0.5)])
 		#Set up collisions for environment (This currently doesn't work - Patrick)
 		#Creating floor collider
-		avatarCRayNode = collGeom(self.player.avatar, 'Avatar_ray', 0x08, 0x00, [CollisionRay(0,0,0,0,-5,0)])
+		avatarCRayNode = collGeom(self.player.avatar, 'Avatar ray', 0x08, 0x00, [CollisionRay(0,0,0,0,-5,0)])
 		lifter = CollisionHandlerFloor()
 		lifter.addCollider(avatarCRayNode, self.player.avatar)
+		lifter.setMaxVelocity(4)
 		self.cTrav.addCollider(avatarCRayNode, lifter)
 		
 			
 		
-		collGeom(self.env, 'floor', 0x00,0xFFFFFFFF, [CollisionPlane(Plane(Vec3(0,0,1), Point3(0,0,0)))])
+		collGeom(self.env, 'floor', 0x00,0xffffffff, [CollisionPlane(Plane(Vec3(0,1,0), Point3(0,0,100)))])
 		#Set up collisions for objects (We may need to organize all objects by their type. Since creating the collision spheres
 		#May be a pain.
 		
+		# plane = CollisionPlane(Plane(Vec3(0,0,1), Point3(0,0,0)))
+		# cNode = CollisionNode("floor")
+		# cNode.addSolid(plane)
+		# cNode.setIntoCollideMask(BitMask32.allOn())
+		# cNodePath = self.env.attachNewNode(cNode)
+		# cNodePath.show();
+		
 		self.accept("collected-ring",self.collectRing)
+		self.accept("collected-anvil",self.collectAnvil)
 	
 	def displayHelp(self):
 		#Needs to Pause Game
 		return;
+	def collectAnvil(self,cEntry):
+		print "You hit an anvil!"
+		self.anvils.remove(cEntry.getIntoNodePath().getParent())
+		cEntry.getIntoNodePath().getParent().remove()
+		if(self.numRings < ANVIL_LOSS):
+			self.numRings = 0
+		else:
+			self.numRings -= ANVIL_LOSS
+		self.ringLoss.play()
+		self.ringText.removeNode()
+		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,
+										TextNode.ACenter,VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
+		
 	def collectRing(self,cEntry):
 		print "You collected a ring!"
 		self.rings.remove(cEntry.getIntoNodePath().getParent())
 		cEntry.getIntoNodePath().getParent().remove()
 		self.numRings += 1
+		self.ringGained.play()
 		#Update the Ring Text
 		self.ringText.removeNode()
 		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,
