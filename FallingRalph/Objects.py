@@ -52,7 +52,7 @@ class Objects:
 		if(type == TORUS):
 			self.object = loader.loadModel("models/torus")
 			self.object.setScale(2)
-			#self.object.setColor(0,0,1,1)	
+			self.object.setColor(255,215,0,1)   # Gold
 		elif(type == RING):
 			self.object = loader.loadModel("models/torus")
 			self.object.setScale(0.5)

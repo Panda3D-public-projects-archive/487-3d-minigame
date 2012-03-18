@@ -6,6 +6,7 @@
 ### Assignment: Assignment 4
 ### Files included: 
 ### Description: 
+### Note: Sonic the Hedgehog and other names are registered trademarks of SEGA. This game is only made for academic purposes.
 ################ 
 '''
 ### Name: 
@@ -164,6 +165,8 @@ class World(DirectObject):
 		
 		self.ringLoss = base.loader.loadSfx("music/RingLoss.mp3")
 		self.ringGained = base.loader.loadSfx("music/RingGained.mp3")
+		self.characterSelectMusic = base.loader.loadSfx("music/SelectACharacter.mp3")
+		self.gameMusic = base.loader.loadSfx("music/special_stage.mp3")
 		'''
 		#If we want music just comment out this part and put the file below
 		#Play music
@@ -207,7 +210,9 @@ class World(DirectObject):
 			self.difficulty = SCALE_OF_HARDNESS[self.curDiff]
 			self.selectScreen()
 			self.avatarSelectTask = taskMgr.add(self.avatarSelect, "avatarSelect")
-			
+			#Start Character Select Music
+			self.characterSelectMusic.setLoop(True)
+			self.characterSelectMusic.play()
 			return task.done
 
 	def buttonPick(self):
@@ -254,6 +259,9 @@ class World(DirectObject):
 			#Now that the player has picked an avatar
 			#Prepare initial game state and add gameLoop to the task list.
 			self.loadInitialGameState()
+			self.characterSelectMusic.stop()
+			self.gameMusic.setLoop(True)
+			self.gameMusic.play()
 			
 			return task.done
 	'''

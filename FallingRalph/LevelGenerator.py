@@ -50,7 +50,7 @@ class LevelGenerator:
 			totalsign += ( sign[0]  / math.fabs(sign[0]));
 			totalsign2 += ( sign[1]  / math.fabs(sign[1]));
 			
-			ring = Objects( 1 , Vec3(currentRing[0], currentRing[1], i * self.SECTIONHEIGHT));
+			ring = Objects( TORUS , Vec3(currentRing[0], currentRing[1], i * self.SECTIONHEIGHT));
 			self.rings.append(ring.object);
 			lastRing[0] = currentRing[0];
 			lastRing[1] = currentRing[1];
