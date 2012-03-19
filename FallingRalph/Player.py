@@ -32,6 +32,7 @@ RALPH = 0
 SONIC = 1
 TAILS = 2
 EVE = 3
+BUNNY = 4
 STARTING_VELOCITY = Vec3(0,0,-10)
 #################
 SONIC_SCALE = .25
@@ -59,6 +60,8 @@ class Player:
 			self.avatar.setScale(SONIC_SCALE)
 		elif(choice == EVE):
 			self.avatar = loader.loadModel("models/eve")
+		elif(choice == BUNNY):
+			self.avatar = loader.loadModel("models/bunny")
 		self.avatar.reparentTo(render)
 		self.avatar.setPos(STARTING_POS)
 		self.avatar.setHpr(180,90,0)
