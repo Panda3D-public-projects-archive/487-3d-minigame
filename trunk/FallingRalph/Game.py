@@ -87,6 +87,7 @@ LIST_OF_DPOS = [Vec3(-10,0,0),Vec3(-6,0,0),Vec3(-2,0,0),Vec3(2,0,0),Vec3(6,0,0),
 
 #Difficulty levels
 SCALE_OF_HARDNESS = [5,10,15,20,25,25]
+BUNNIES = 25
 
 
 class World(DirectObject):
@@ -240,10 +241,16 @@ class World(DirectObject):
 		
 		#Load the avatars on the screen for initial selection
 		#Load the text below the avatars as well
-		for i in range(len(LIST_OF_AVATARS)):
-			self.avatars.append(self.loadAvatar(LIST_OF_AVATARS[i],LIST_OF_SCALES[i],LIST_OF_POSITIONS[i]))
-			self.names.append(self.loadText("fonts/centbold.egg",LIST_OF_NAMES[i], LIST_OF_NAMES[i],
-							  TextNode.ACenter,VBase4(0,0,1,1),LIST_OF_TEXT_POS[i],0.1) )
+		if(self.curDiff <> 5):
+			for i in range(len(LIST_OF_AVATARS)):
+				self.avatars.append(self.loadAvatar(LIST_OF_AVATARS[i],LIST_OF_SCALES[i],LIST_OF_POSITIONS[i]))
+				self.names.append(self.loadText("fonts/centbold.egg",LIST_OF_NAMES[i], LIST_OF_NAMES[i],
+								  TextNode.ACenter,VBase4(0,0,1,1),LIST_OF_TEXT_POS[i],0.1) )
+		else:
+			self.avatars.append(self.loadAvatar("models/bunny",1,Vec3(0,0,0)))
+			self.names.append(self.loadText("fonts/centbold.egg","Bunny", "Bunny",
+								  TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,-10,0),0.1) )
+			self.curAvatar = BUNNY
 	'''
 	### Name: avatarSelect
 	### Author: Patrick Delaney
@@ -334,7 +341,7 @@ class World(DirectObject):
 	'''
 	def cleanUpAvatars(self):
 		self.titleText.removeNode()
-		for i in range(len(LIST_OF_AVATARS)):
+		for i in range(len(self.avatars)):
 			self.avatars[i].removeNode()
 			self.names[i].removeNode()
 	'''
@@ -444,6 +451,11 @@ class World(DirectObject):
 		
 		elif(self.player.avatarChoice == EVE):
 			avatarNode = collGeom(self.player.avatar, 'eve', 0x01, 0x00, 
+										[CollisionSphere(Point3(center + Point3(0,0,3.5)),radius*0.35),
+										CollisionSphere(Point3(center + Point3(0,0,1.75)),radius*0.35),
+										CollisionSphere(Point3(center + Point3(0,0,0.35)),radius*0.3)])
+		elif(self.player.avatarChoice == BUNNY):
+			avatarNode = collGeom(self.player.avatar, 'bunny', 0x01, 0x00, 
 										[CollisionSphere(Point3(center + Point3(0,0,3.5)),radius*0.35),
 										CollisionSphere(Point3(center + Point3(0,0,1.75)),radius*0.35),
 										CollisionSphere(Point3(center + Point3(0,0,0.35)),radius*0.3)])
