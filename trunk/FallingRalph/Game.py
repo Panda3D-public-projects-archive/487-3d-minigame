@@ -131,6 +131,8 @@ class World(DirectObject):
 		self.types = []
 		#Storage for anvils
 		self.anvils = []
+		#Storage for collisionNodes
+		self.cNodePaths = []
 		
 		#State Variables
 		self.notSelected = True
@@ -138,6 +140,8 @@ class World(DirectObject):
 		self.score = 0 #Used to keep track of the player's score.
 		self.numRings = 0 #Used to keep track of how many Rings Collected
 		self.alreadyDisplayed = False
+		self.endOfLevel = False #Used to keep track of when the player hits the end of the level.
+		self.resetGame = False #Used to decide when to reset the game
 		
 		
 		#A dictionary of what keys are currently being pressed
@@ -174,12 +178,7 @@ class World(DirectObject):
 		self.music.setLoop(True)
 		self.music.play()
 		'''
-	'''
-	### Name: selectScreen 
-	### Author: Patrick Delaney
-	### Parameters: None
-	### Description: Loads the select screen.
-	'''
+
 	
 	def loadButton(self,path,scale,pos):
 		button = loader.loadModel("models/plane")
@@ -197,6 +196,7 @@ class World(DirectObject):
 		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
 		for i in range(len(LIST_OF_DIFFICULT)):
+			print i
 			self.buttons.append(self.loadButton(LIST_OF_DIFFICULT[i], DSCALE, LIST_OF_DPOS[i]))
 
                 
@@ -229,7 +229,12 @@ class World(DirectObject):
 		self.titleText.removeNode()
 		for i in range(len(LIST_OF_DIFFICULT)):
 			self.buttons[i].removeNode()
-	
+	'''
+	### Name: selectScreen 
+	### Author: Patrick Delaney
+	### Parameters: None
+	### Description: Loads the select screen.
+	'''
 	def selectScreen(self):
 		text = "Select a Character! Click on any of the four below!"
 		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
@@ -355,15 +360,20 @@ class World(DirectObject):
 		dt = task.time - task.last
 		task.last = task.time
 		if(self.keys["levelStart"]):
-			#Remove the Instruction Text from the screen
-			self.startText.removeNode()
-			#Will also need to update the camera's position
-			self.updatePlayer(dt)
-			#Updating the camera with the player is off until we have something in the background to compare it with.
-			self.updateCamera()
+			if( not self.endOfLevel):
+				#Remove the Instruction Text from the screen
+				self.startText.removeNode()
+				#Will also need to update the camera's position
+				self.updatePlayer(dt)
+				#Updating the camera.
+				self.updateCamera()
 		
-			#Get the rings to rotate
-			self.updateRings(dt)
+				#Get the rings to rotate
+				self.updateRings(dt)
+			else:
+				print "Level end"
+				self.resultScreen()
+				return task.done
 		else:
 			if(not self.alreadyDisplayed):
 				self.startText = self.loadText("fonts/centbold.egg","Start", "Press 'Spacebar' to start",TextNode.ACenter,
@@ -374,6 +384,9 @@ class World(DirectObject):
 	def updatePlayer(self,dt):
 		
 		curPos = self.player.avatar.getPos()
+		if (curPos[2] <= -995):
+			self.endOfLevel = True
+			return
 		if(self.keys["moveLeft"]):
 			curPos[0] -= X_STRAFE
 		if(self.keys["moveRight"]):
@@ -386,8 +399,7 @@ class World(DirectObject):
 		self.player.avatar.setPos(newPos)
 	
 	def updateCamera(self):
-		#We will need to discuss boundaries
-		#avatarPos = self.player.avatar.getPos()
+
 		base.camera.setPos(self.player.avatar.getPos() + Vec3(0,0,50))
 	'''
 	### Name: updateRings
@@ -395,6 +407,7 @@ class World(DirectObject):
 	### Parameters:  dt - change in time since the last frame
 	### Description: Causes the rings to rotate.
 	'''
+	
 	def updateRings(self,dt):
 		if(len(self.rings) is not 0):
 			for ring in self.rings:
@@ -440,33 +453,14 @@ class World(DirectObject):
 										
 										
 		self.cTrav.addCollider(avatarNode,self.cHandler)
+		self.cNodePaths.append(avatarNode)
 		
 		#Set up collisions for rings
 		for ring in self.rings:
-				collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)])
+				self.cNodePaths.append(collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)]))
 			
 		for anvil in self.anvils:
-				collGeom(anvil,"anvil", 0x00,0x01,[CollisionSphere(Point3(0,0,0),0.5)])
-		#Set up collisions for environment (This currently doesn't work - Patrick)
-		#Creating floor collider
-		avatarCRayNode = collGeom(self.player.avatar, 'Avatar ray', 0x08, 0x00, [CollisionRay(0,0,0,0,-5,0)])
-		lifter = CollisionHandlerFloor()
-		lifter.addCollider(avatarCRayNode, self.player.avatar)
-		lifter.setMaxVelocity(4)
-		self.cTrav.addCollider(avatarCRayNode, lifter)
-		
-			
-		
-		collGeom(self.env, 'floor', 0x00,0xffffffff, [CollisionPlane(Plane(Vec3(0,1,0), Point3(0,0,100)))])
-		#Set up collisions for objects (We may need to organize all objects by their type. Since creating the collision spheres
-		#May be a pain.
-		
-		# plane = CollisionPlane(Plane(Vec3(0,0,1), Point3(0,0,0)))
-		# cNode = CollisionNode("floor")
-		# cNode.addSolid(plane)
-		# cNode.setIntoCollideMask(BitMask32.allOn())
-		# cNodePath = self.env.attachNewNode(cNode)
-		# cNodePath.show();
+				self.cNodePaths.append(collGeom(anvil,"anvil", 0x00,0x01,[CollisionSphere(Point3(0,0,0),0.5)]) )
 		
 		self.accept("collected-ring",self.collectRing)
 		self.accept("collected-anvil",self.collectAnvil)
@@ -498,7 +492,57 @@ class World(DirectObject):
 		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,
 										TextNode.ACenter,VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
 		
+	def resultScreen(self):
+		self.env.hide()
+		self.player.avatar.hide()
+		self.gameMusic.stop()
+		self.ringText.removeNode()
+		self.scoreText.removeNode()
+		self.resultText = self.loadText("fonts/centbold.egg","Result", "RESULTS",
+										TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.9),0.1)
+		collectedRings = 0
+		self.ringResult = self.loadText("fonts/centbold.egg","RingResult", "You've Collected: " + `self.numRings` 
+										+ " rings",TextNode.ACenter,VBase4(1,1,0,1),Vec3(-0.6,0,0.7),0.1)
+		self.score += self.numRings*10
+		self.scoreResultText = self.loadText("fonts/centbold.egg","scoreRes","Your score is now: " + `self.score` 
+										     ,TextNode.ACenter,VBase4(1,1,0,1),Vec3(-0.6,0,0.5),0.1)
+		self.continueText = self.loadText("fonts/centbold.egg","reset","Press r to go back to the Main Menu"
+										     ,TextNode.ACenter,VBase4(1,1,0,1),Vec3(0.0,0,0.3),0.1)
+		self.waitTask = taskMgr.add(self.wait, "wait")
+	def wait(self,task):
+		self.accept("r", self.reset)
+		if(not self.resetGame):
+			return task.cont
+		else:
+			self.selectLevel()
+			self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
+			return task.done
+	def reset(self):
+		self.resetGame = True
+		self.env.removeNode()
+		self.player.avatar.removeNode()
+		for path in self.cNodePaths:
+			path.removeNode()
+		for ring in self.rings:
+			ring.removeNode()
+		for anvil in self.anvils:
+			anvil.removeNode()
+		self.resultText.removeNode()
+		self.ringResult.removeNode()
+		self.scoreResultText.removeNode()
+		self.continueText.removeNode()
+		self.curDiff = -1
+		del self.buttons[:]
+		del self.avatars[:]
+		del self.names[:]
+		
+		
 	
+		
+		
+		
+		
+		
 	
 world = World()  #Creates the world
 
