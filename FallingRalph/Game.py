@@ -60,7 +60,7 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 		cNode.addSolid(g)
 	
 	cNodePath = obj.attachNewNode(cNode)
-	cNodePath.show()
+	#cNodePath.show()
 	return cNodePath
 
 ######CONSTANTS######
@@ -196,7 +196,6 @@ class World(DirectObject):
 		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
 		for i in range(len(LIST_OF_DIFFICULT)):
-			print i
 			self.buttons.append(self.loadButton(LIST_OF_DIFFICULT[i], DSCALE, LIST_OF_DPOS[i]))
 
                 
@@ -204,7 +203,6 @@ class World(DirectObject):
 		if(self.curDiff < 0): # If the player has not selected a level
 			return task.cont
 		else:
-			print "Exiting button task"
 			self.cleanUpButtons()
 			self.accept("mouse1", self.pick) # change picker to handle Avatars now.
 			self.difficulty = SCALE_OF_HARDNESS[self.curDiff]
@@ -371,7 +369,6 @@ class World(DirectObject):
 				#Get the rings to rotate
 				self.updateRings(dt)
 			else:
-				print "Level end"
 				self.resultScreen()
 				return task.done
 		else:
@@ -454,10 +451,9 @@ class World(DirectObject):
 										
 		self.cTrav.addCollider(avatarNode,self.cHandler)
 		self.cNodePaths.append(avatarNode)
-		
 		#Set up collisions for rings
 		for ring in self.rings:
-				self.cNodePaths.append(collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)]))
+				self.cNodePaths.append(collGeom(ring,"ring", 0x00,0x01,[CollisionSphere(Point3(0,0,0),1)]) )
 			
 		for anvil in self.anvils:
 				self.cNodePaths.append(collGeom(anvil,"anvil", 0x00,0x01,[CollisionSphere(Point3(0,0,0),0.5)]) )
@@ -515,10 +511,20 @@ class World(DirectObject):
 			return task.cont
 		else:
 			self.selectLevel()
+			self.resetGame = False
 			self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
 			return task.done
 	def reset(self):
+		#Reset state variables
+		self.notSelected = True
 		self.resetGame = True
+		self.endOfLevel = False
+		self.alreadyDisplayed = False
+		self.curAvatar = -1
+		self.keys["levelStart"] = 0
+		self.curDiff = -1
+		self.numRings = 0
+		#Remove Objects
 		self.env.removeNode()
 		self.player.avatar.removeNode()
 		for path in self.cNodePaths:
@@ -527,15 +533,22 @@ class World(DirectObject):
 			ring.removeNode()
 		for anvil in self.anvils:
 			anvil.removeNode()
+		#Remove text
 		self.resultText.removeNode()
 		self.ringResult.removeNode()
 		self.scoreResultText.removeNode()
 		self.continueText.removeNode()
-		self.curDiff = -1
+		#Empty object storage
+		del self.rings[:]
+		del self.anvils[:]
 		del self.buttons[:]
 		del self.avatars[:]
 		del self.names[:]
-		
+		#Reset camera
+		self.cameraPos = Vec3(0,0,50) #I'm using this to keep track of the camera's position since it won't get me its position
+		base.camera.setPosHpr(self.cameraPos, Vec3(0, -90, 0))
+		#Set up mouse to click buttons again
+		self.accept("mouse1", self.buttonPick)
 		
 	
 		
