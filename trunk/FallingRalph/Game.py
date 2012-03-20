@@ -63,6 +63,10 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 	#cNodePath.show()
 	return cNodePath
 
+def genLabelText(text, i):
+	return OnscreenText(text = text, pos = (-1.25, .95-.05*i), fg=(1,0.3,0.3,1),
+											align = TextNode.ALeft, scale = .05)
+
 ######CONSTANTS######
 #These are used in loading the avatars for the character selection screen.
 LIST_OF_AVATARS = [ "models/ralph", "models/sonic","models/tails","models/eve"]
@@ -123,7 +127,6 @@ class World(DirectObject):
     #Level selection
 		self.buttons = []
 		self.curDiff = -1
-		self.selectLevel()
 		
 		#Object Storage
 		self.objects = []
@@ -134,6 +137,7 @@ class World(DirectObject):
 		self.anvils = []
 		#Storage for collisionNodes
 		self.cNodePaths = []
+		self.helpScreenOn = 0
 		
 		#State Variables
 		self.notSelected = True
@@ -160,18 +164,27 @@ class World(DirectObject):
 		self.accept("arrow_down-up", self.keys.update, [{"moveDown":0}] )
 		self.accept("h", self.displayHelp)
 		
-		#Picking, Used in character selection and level selection.
-		self.accept("mouse1", self.buttonPick)
+		self.accept("mouse1", self.introClick)
 		
 		#Quit game
 		self.accept("escape", sys.exit)
 		
-		self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
+		self.introWaitTask = taskMgr.add(self.introWait, "introWait")
 		
+		#Music for the game
 		self.ringLoss = base.loader.loadSfx("music/RingLoss.mp3")
 		self.ringGained = base.loader.loadSfx("music/RingGained.mp3")
+		self.stageSelectMusic = base.loader.loadSfx("music/LevelSelect.mp3")
+		self.helpMusic = base.loader.loadSfx("music/HelpMusic.mp3")
 		self.characterSelectMusic = base.loader.loadSfx("music/SelectACharacter.mp3")
-		self.gameMusic = base.loader.loadSfx("music/special_stage.mp3")
+		#self.gameMusic = base.loader.loadSfx("music/special_stage.mp3")
+		self.gameMusic = base.loader.loadSfx("music/special_stage_2.mp3")
+		self.introMusic = base.loader.loadSfx("music/IntroMusic.mp3")
+		self.badEndingMusic = base.loader.loadSfx("music/StageClearBad.mp3")
+		self.goodEndingMusic = base.loader.loadSfx("music/StageClear.mp3")
+		
+		self.introScreen()
+		
 		'''
 		#If we want music just comment out this part and put the file below
 		#Play music
@@ -180,6 +193,34 @@ class World(DirectObject):
 		self.music.play()
 		'''
 
+		
+	def introScreen(self):
+		self.introMusic.play()
+		self.readyClick = 0
+		self.titleScreen = loader.loadModel("models/plane")
+		tex = loader.loadTexture("models/titleScreen.png")
+		self.titleScreen.setTexture(tex, 1)  
+		self.titleScreen.setCollideMask(0x01)
+		self.titleScreen.reparentTo(render)
+		self.titleScreen.setScale(Vec3(16,1,16))
+		self.titleScreen.setPos(Vec3(0,0,0))
+		self.titleScreen.setP(-90)
+		
+	def introClick(self):
+		self.ignore("mouse1")
+		self.readyClick = 1
+	
+	def introWait(self, task):
+		if self.readyClick == 0:
+			return task.cont
+		else:
+			self.titleScreen.removeNode()
+			if self.introMusic.status() == self.introMusic.PLAYING:
+				self.introMusic.stop()
+			self.selectLevel()
+			self.accept("mouse1", self.buttonPick) #Picking, Used in character selection and level selection.
+			self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
+			return task.done
 	
 	def loadButton(self,path,scale,pos):
 		button = loader.loadModel("models/plane")
@@ -193,6 +234,8 @@ class World(DirectObject):
 		return button
 
 	def selectLevel(self):
+		self.stageSelectMusic.setLoop(True)
+		self.stageSelectMusic.play()
 		text = "Select your Level!"
 		self.titleText = self.loadText("fonts/centbold.egg","Title", text,TextNode.ACenter,VBase4(0,0,1,1),Vec3(0,0,0.90),0.1)
 		
@@ -205,6 +248,7 @@ class World(DirectObject):
 			return task.cont
 		else:
 			self.cleanUpButtons()
+			self.stageSelectMusic.stop()
 			self.accept("mouse1", self.pick) # change picker to handle Avatars now.
 			self.difficulty = SCALE_OF_HARDNESS[self.curDiff]
 			self.selectScreen()
@@ -364,6 +408,9 @@ class World(DirectObject):
 		#Getting the change in time since the last task.
 		dt = task.time - task.last
 		task.last = task.time
+		if self.helpScreenOn == 1: #doesn't update while game is paused
+			return task.cont
+		
 		if(self.keys["levelStart"]):
 			if( not self.endOfLevel):
 				#Remove the Instruction Text from the screen
@@ -473,9 +520,54 @@ class World(DirectObject):
 		self.accept("collected-ring",self.collectRing)
 		self.accept("collected-anvil",self.collectAnvil)
 	
+	def helpScreenToggle(self, tog):
+		if tog == 1:
+			self.help1 = self.loadText("fonts/centbold.egg","RingResult", "Controls",TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.7),0.1)
+			self.help2 = self.loadText("fonts/centbold.egg","RingResult", "Movement: Arrow Keys",TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.5),0.1)
+			self.help3 = self.loadText("fonts/centbold.egg","RingResult", "Help: H",TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.3),0.1)
+			self.help4 = self.loadText("fonts/centbold.egg","RingResult", "Exit Game: Escape",TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.1),0.1)
+			self.help5 = self.loadText("fonts/centbold.egg","RingResult", "Collect as many rings as you can",
+																TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,-0.1),0.1)
+			self.help6 =  self.loadText("fonts/centbold.egg","RingResult", "to increase your score!",
+																TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,-0.2 ),0.1)
+			self.help7 = self.loadText("fonts/centbold.egg","RingResult", "Watch out for Obstacles!",
+																	TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,-0.5),0.1)
+		else:
+			self.help1.removeNode()
+			self.help2.removeNode()
+			self.help3.removeNode()
+			self.help4.removeNode()
+			self.help5.removeNode()
+			self.help6.removeNode()
+			self.help7.removeNode()
+	
 	def displayHelp(self):
-		#Needs to Pause Game
-		return;
+		if self.helpScreenOn == 0:
+			self.helpScreenOn = 1
+			self.env.hide()
+			self.player.avatar.hide()
+			for ring in self.rings:
+				ring.hide()
+			for anvil in self.anvils:
+				anvil.hide()
+			self.gameMusic.stop()
+			self.helpMusic.setLoop(True)
+			self.helpMusic.play()
+			self.helpScreenToggle(1)
+		else:
+			self.helpScreenOn = 0
+			self.helpScreenToggle(0)
+			self.env.show()
+			self.player.avatar.show()
+			for ring in self.rings:
+				ring.show()
+			for anvil in self.anvils:
+				anvil.show()
+			self.helpMusic.stop()
+			self.gameMusic.play()
+		return
+		
+		
 	def collectAnvil(self,cEntry):
 		print "You hit an anvil!"
 		self.anvils.remove(cEntry.getIntoNodePath().getParent())
@@ -504,6 +596,10 @@ class World(DirectObject):
 		self.env.hide()
 		self.player.avatar.hide()
 		self.gameMusic.stop()
+		if self.numRings < 5:
+			self.badEndingMusic.play()
+		else:
+			self.goodEndingMusic.play()
 		self.ringText.removeNode()
 		self.scoreText.removeNode()
 		self.resultText = self.loadText("fonts/centbold.egg","Result", "RESULTS",
@@ -516,12 +612,17 @@ class World(DirectObject):
 										     ,TextNode.ACenter,VBase4(1,1,0,1),Vec3(-0.6,0,0.5),0.1)
 		self.continueText = self.loadText("fonts/centbold.egg","reset","Press r to go back to the Main Menu"
 										     ,TextNode.ACenter,VBase4(1,1,0,1),Vec3(0.0,0,0.3),0.1)
+		self.accept("r", self.reset)
 		self.waitTask = taskMgr.add(self.wait, "wait")
 	def wait(self,task):
-		self.accept("r", self.reset)
 		if(not self.resetGame):
 			return task.cont
 		else:
+			self.ignore("r")
+			if self.badEndingMusic.status() == self.badEndingMusic.PLAYING:
+				self.badEndingMusic.stop()
+			if self.goodEndingMusic.status() ==	 self.goodEndingMusic.PLAYING:
+				self.goodEndingMusic.stop()
 			self.selectLevel()
 			self.resetGame = False
 			self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
