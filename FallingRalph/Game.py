@@ -50,7 +50,13 @@ from LevelGenerator import *
 ### Add a results screen  (Return back to level select screen afterwards?)	
 ### Add a button that causes the players avatar to speed up / slow down
 '''
-
+'''
+### Name: collGeom
+### Author: Dr. Zmuda 
+### Parameters: obj- object, name - name of the object, fromMask - Bit Mask for from collide check, intoMask - Bit mask for 
+###				into collide check, geomList - list of collision geometic objects
+### Description: Factored out code that simplifies creating collision objects.
+'''
 def collGeom(obj, name, fromMask, intoMask, geomList):
 	cNode = CollisionNode(name)
 	cNode.setFromCollideMask(BitMask32(fromMask))
@@ -62,11 +68,7 @@ def collGeom(obj, name, fromMask, intoMask, geomList):
 	cNodePath = obj.attachNewNode(cNode)
 	#cNodePath.show()
 	return cNodePath
-
-def genLabelText(text, i):
-	return OnscreenText(text = text, pos = (-1.25, .95-.05*i), fg=(1,0.3,0.3,1),
-											align = TextNode.ALeft, scale = .05)
-
+	
 ######CONSTANTS######
 #These are used in loading the avatars for the character selection screen.
 LIST_OF_AVATARS = [ "models/ralph", "models/sonic","models/tails","models/eve"]
@@ -97,7 +99,7 @@ BUNNIES = 25
 class World(DirectObject):
 	'''
 	### Name: __init__ (Constructor)
-	### Author: Patrick Delaney
+	### Author: Patrick Delaney, Tom Williams, John Mannix
 	### Parameters: 
 	### Description: 
 	'''
@@ -124,7 +126,7 @@ class World(DirectObject):
 		#Character Selection
 		self.avatars = []
 		self.names = []
-    #Level selection
+		#Level selection
 		self.buttons = []
 		self.curDiff = -1
 		
@@ -138,6 +140,7 @@ class World(DirectObject):
 		#Storage for collisionNodes
 		self.cNodePaths = []
 		self.helpScreenOn = 0
+		self.inGame = False
 		
 		#State Variables
 		self.notSelected = True
@@ -185,15 +188,13 @@ class World(DirectObject):
 		
 		self.introScreen()
 		
-		'''
-		#If we want music just comment out this part and put the file below
-		#Play music
-		self.music = base.loader.loadSfx("music/special_stage.mp3")
-		self.music.setLoop(True)
-		self.music.play()
-		'''
 
-		
+	'''
+	### Name: introScreen
+	### Author: John Mannix
+	### Parameters: Nothing
+	### Description: Sets up the intro screen 
+	'''	
 	def introScreen(self):
 		self.introMusic.play()
 		self.readyClick = 0
@@ -205,11 +206,21 @@ class World(DirectObject):
 		self.titleScreen.setScale(Vec3(16,1,16))
 		self.titleScreen.setPos(Vec3(0,0,0))
 		self.titleScreen.setP(-90)
-		
+	'''
+	### Name: introClick
+	### Author: John Mannix
+	### Parameters: nothing
+	### Description: sets up state for the next screen after the intro screen
+	'''	
 	def introClick(self):
 		self.ignore("mouse1")
 		self.readyClick = 1
-	
+	'''
+	### Name: introWait
+	### Author: John Mannix
+	### Parameters: task - required for task methods
+	### Description: The task that handles the introscreen.
+	'''	
 	def introWait(self, task):
 		if self.readyClick == 0:
 			return task.cont
@@ -221,7 +232,12 @@ class World(DirectObject):
 			self.accept("mouse1", self.buttonPick) #Picking, Used in character selection and level selection.
 			self.buttonSelectTask = taskMgr.add(self.buttonSelect, "buttonSelect")
 			return task.done
-	
+	'''
+	### Name: loadButton
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: path - path to texture, scale - scale of button, pos- position of button
+	### Description: Loads the buttons for the difficulty select screen
+	'''	
 	def loadButton(self,path,scale,pos):
 		button = loader.loadModel("models/plane")
 		tex = loader.loadTexture("models/button-"+path+".png") #Load the texture
@@ -232,7 +248,12 @@ class World(DirectObject):
 		button.setPos(pos)
 		button.setP(-90)
 		return button
-
+	'''
+	### Name: selectLevel
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: None
+	### Description: Sets up the difficulty select screen
+	'''	
 	def selectLevel(self):
 		self.stageSelectMusic.setLoop(True)
 		self.stageSelectMusic.play()
@@ -242,7 +263,12 @@ class World(DirectObject):
 		for i in range(len(LIST_OF_DIFFICULT)):
 			self.buttons.append(self.loadButton(LIST_OF_DIFFICULT[i], DSCALE, LIST_OF_DPOS[i]))
 
-                
+	'''
+	### Name: buttonSelect
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: task - required for task methods
+	### Description: The task that handles the difficulty select screen
+	'''	          
 	def buttonSelect(self,task):
 		if(self.curDiff < 0): # If the player has not selected a level
 			return task.cont
@@ -257,7 +283,12 @@ class World(DirectObject):
 			self.characterSelectMusic.setLoop(True)
 			self.characterSelectMusic.play()
 			return task.done
-
+	'''
+	### Name: buttonPick
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: nothing
+	### Description: Handles picking for the buttons
+	'''	
 	def buttonPick(self):
 		cEntry = self.picker.pick()
 		if cEntry:
@@ -267,14 +298,19 @@ class World(DirectObject):
 				if p.isAncestorOf(buttonGeomHit):
 					self.curDiff = i
 					return
-
+	'''
+	### Name: cleanUpButtons
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: nothing
+	### Description: Removes all the buttons from the screen
+	'''	
 	def cleanUpButtons(self):
 		self.titleText.removeNode()
 		for i in range(len(LIST_OF_DIFFICULT)):
 			self.buttons[i].removeNode()
 	'''
 	### Name: selectScreen 
-	### Author: Patrick Delaney
+	### Author: Patrick Delaney, Tom Williams, John Mannix
 	### Parameters: None
 	### Description: Loads the select screen.
 	'''
@@ -297,7 +333,7 @@ class World(DirectObject):
 			self.curAvatar = BUNNY
 	'''
 	### Name: avatarSelect
-	### Author: Patrick Delaney
+	### Author: Patrick Delaney, Tom Williams, John Mannix
 	### Parameters: task
 	### Description: This method is a task that handles the character selection. Once the player has selected a character, it
 	###				 removes itself from the task queue and adds the gameLoop task to the queue as well as loads the initial 
@@ -320,7 +356,7 @@ class World(DirectObject):
 			return task.done
 	'''
 	### Name: loadAvatar
-	### Author: Patrick Delaney
+	### Author: Patrick Delaney, Tom Williams, John Mannix
 	### Parameters: path - path to Model, Scale - scale for the model, pos - position of the model
 	### Description: Loads an "avatar" for the player unto the screen. This is used in the character select screen.
 	'''
@@ -332,13 +368,24 @@ class World(DirectObject):
 		avatar.setPos(pos)
 		avatar.setP(-90)
 		return avatar
-	#Only used in testing and also as a placeholder for when you finish the level loader, Tom.	
+	'''
+	### Name: loadObjects
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: none
+	### Description: Loads the objects in from the random level generator
+	'''	
 	def loadObjects(self):
 		level = LevelGenerator( self.rings , self.difficulty, self.anvils);
+	'''
+	### Name: loadInitialGameState
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: none
+	### Description: Prepares the initial game state and starts the main game loop.
+	'''	
 	def loadInitialGameState(self):
 		self.gameTask = taskMgr.add(self.gameLoop, "gameloop")
 		self.gameTask.last = 0
-		#Load environment (I may make a class or method or something for this later - Patrick)
+		#Load environment
 		self.env = loader.loadModel("models/env")
 		self.env.reparentTo(render)
 		self.env.setScale(1000)
@@ -349,6 +396,7 @@ class World(DirectObject):
 		#Setup Collisions
 		self.setupCollisions()
 		
+		self.inGame = True
 		#Load score Font
 		self.scoreText = self.loadText("fonts/centbold.egg","Score", "Score: " + `self.score`,TextNode.ACenter,
 										VBase4(1,1,0,1),Vec3(-1.1,0,0.90),0.1)
@@ -404,6 +452,12 @@ class World(DirectObject):
 				if p.isAncestorOf(avatarGeomHit):
 					self.curAvatar = i
 					return
+	'''
+	### Name: gameLoop
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: 
+	### Description: 
+	'''	
 	def gameLoop(self, task):
 		#Getting the change in time since the last task.
 		dt = task.time - task.last
@@ -432,6 +486,13 @@ class World(DirectObject):
 				self.alreadyDisplayed = True
 
 		return task.cont #Makes game loop infinite
+	'''
+	### Name: updatePlayer
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: dt - change in time 
+	### Description: Updates the player using simple position equation. Physically stops the player from moving since the
+	### 			 collision with the ground was not working right.
+	'''	
 	def updatePlayer(self,dt):
 		
 		curPos = self.player.avatar.getPos()
@@ -464,6 +525,12 @@ class World(DirectObject):
 			for ring in self.rings:
 				rotate = HprInterval(ring,ring.getHpr() +Vec3(0,0,1),dt)
 				rotate.start()
+	'''
+	### Name: setupCollisions
+	### Author: Patrick Delaney
+	### Parameters: None
+	### Description: Sets up all of the collision objects.
+	'''	
 	def setupCollisions(self):
 		# use an event collision handler (sends events on collisions)
 		self.cHandler = CollisionHandlerEvent()
@@ -519,7 +586,7 @@ class World(DirectObject):
 		
 		self.accept("collected-ring",self.collectRing)
 		self.accept("collected-anvil",self.collectAnvil)
-	
+
 	def helpScreenToggle(self, tog):
 		if tog == 1:
 			self.help1 = self.loadText("fonts/centbold.egg","RingResult", "Controls",TextNode.ACenter,VBase4(1,1,0,1),Vec3(0,0,0.7),0.1)
@@ -542,32 +609,38 @@ class World(DirectObject):
 			self.help7.removeNode()
 	
 	def displayHelp(self):
-		if self.helpScreenOn == 0:
-			self.helpScreenOn = 1
-			self.env.hide()
-			self.player.avatar.hide()
-			for ring in self.rings:
-				ring.hide()
-			for anvil in self.anvils:
-				anvil.hide()
-			self.gameMusic.stop()
-			self.helpMusic.setLoop(True)
-			self.helpMusic.play()
-			self.helpScreenToggle(1)
-		else:
-			self.helpScreenOn = 0
-			self.helpScreenToggle(0)
-			self.env.show()
-			self.player.avatar.show()
-			for ring in self.rings:
-				ring.show()
-			for anvil in self.anvils:
-				anvil.show()
-			self.helpMusic.stop()
-			self.gameMusic.play()
+		if(self.inGame):  # Note only displays while in the game. Will not display otherwise. (Causes game to crash)
+			if self.helpScreenOn == 0:
+				self.helpScreenOn = 1
+				self.env.hide()
+				self.player.avatar.hide()
+				for ring in self.rings:
+					ring.hide()
+				for anvil in self.anvils:
+					anvil.hide()
+				self.gameMusic.stop()
+				self.helpMusic.setLoop(True)
+				self.helpMusic.play()
+				self.helpScreenToggle(1)
+			else:
+				self.helpScreenOn = 0
+				self.helpScreenToggle(0)
+				self.env.show()
+				self.player.avatar.show()
+				for ring in self.rings:
+					ring.show()
+				for anvil in self.anvils:
+					anvil.show()
+				self.helpMusic.stop()
+				self.gameMusic.play()
 		return
 		
-		
+	'''
+	### Name: collectAnvil
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: cEntry - required for collision events
+	### Description: Causes the player to lose 5 rings if they hit an anvil
+	'''		
 	def collectAnvil(self,cEntry):
 		print "You hit an anvil!"
 		self.anvils.remove(cEntry.getIntoNodePath().getParent())
@@ -580,7 +653,12 @@ class World(DirectObject):
 		self.ringText.removeNode()
 		self.ringText = self.loadText("fonts/centbold.egg","Rings", "Rings: " + `self.numRings`,
 										TextNode.ACenter,VBase4(1,1,0,1),Vec3(-1.1,0,0.70),0.1)
-		
+	'''
+	### Name: collectRing
+	### Author: Patrick Delaney, Tom Williams, John Mannix
+	### Parameters: cEntry - required for collision events
+	### Description: Causes the player to gain a ring if the hit an onscreen ring
+	'''		
 	def collectRing(self,cEntry):
 		print "You collected a ring!"
 		self.rings.remove(cEntry.getIntoNodePath().getParent())
@@ -613,6 +691,7 @@ class World(DirectObject):
 		self.continueText = self.loadText("fonts/centbold.egg","reset","Press r to go back to the Main Menu"
 										     ,TextNode.ACenter,VBase4(1,1,0,1),Vec3(0.0,0,0.3),0.1)
 		self.accept("r", self.reset)
+		self.inGame = False
 		self.waitTask = taskMgr.add(self.wait, "wait")
 	def wait(self,task):
 		if(not self.resetGame):
@@ -637,6 +716,7 @@ class World(DirectObject):
 		self.keys["levelStart"] = 0
 		self.curDiff = -1
 		self.numRings = 0
+		self.inGame = False
 		#Remove Objects
 		self.env.removeNode()
 		self.player.avatar.removeNode()
